@@ -405,9 +405,12 @@ _assert("gemini" in PARSER_REGISTRY, "PARSER_REGISTRY has 'gemini' key")
 _assert(callable(PARSER_REGISTRY["regex"]), "PARSER_REGISTRY['regex'] is callable")
 _assert(callable(PARSER_REGISTRY["gemini"]), "PARSER_REGISTRY['gemini'] is callable")
 
-# Verify registry functions are the actual functions
 r = PARSER_REGISTRY["regex"](pipeline_text)
 _assert(r["_source"] == "regex", "PARSER_REGISTRY['regex'] executes correctly", str(r.get("_source")))
+
+with open("parser.py", "r", encoding="utf-8") as f:
+    _assert("gemini-2.0-flash" in f.read(), "parser.py targets valid Gemini model gemini-2.0-flash")
+
 
 
 # ============================================================================

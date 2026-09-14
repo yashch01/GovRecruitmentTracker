@@ -167,7 +167,9 @@ class Job(db.Model):  # type: ignore[name-defined]
     # ── Pay / Compensation ────────────────────────────────────────────────────
     pay_level_or_ctc    = db.Column(db.String(300), default="")
 
-    # ── Source Links ──────────────────────────────────────────────────────────
+    # ── Source Links & Reference ──────────────────────────────────────────────
+    source_id           = db.Column(db.Integer, db.ForeignKey("sources.id"), nullable=True)
+    source              = db.relationship("Source", backref=db.backref("jobs", lazy=True))
     notification_url    = db.Column(db.String(1000), default="")
     pdf_url             = db.Column(db.String(1000), default="")
     local_pdf_path      = db.Column(db.String(500), default="")   # path in /archives/
@@ -251,6 +253,7 @@ class Job(db.Model):  # type: ignore[name-defined]
             "exam_category":        self.exam_category,
             "pay_level_or_ctc":     self.pay_level_or_ctc,
             "notification_url":     self.notification_url,
+            "source_id":            self.source_id,
             "pdf_url":              self.pdf_url,
             "local_pdf_path":       self.local_pdf_path,
             "pdf_archive_path":     self.local_pdf_path,

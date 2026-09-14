@@ -40,6 +40,9 @@ services:
         sync: false
         # Set your free Google AI Studio key in Render Dashboard
 
+      - key: GEMINI_MODEL
+        value: gemini-2.0-flash
+
       - key: TELEGRAM_BOT_TOKEN
         sync: false
         # Optional: Bot token from @BotFather (e.g. 123456:ABC-DEF)

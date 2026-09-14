@@ -89,6 +89,7 @@ def setup_test_app():
             user_status=UserStatus.NOT_APPLIED,
             notification_url="https://nic.gov.in/job1",
             is_synced_to_calendar=False,
+            source_id=1,
         )
         j2 = Job(
             title="Executive Trainee (IT)",
@@ -209,6 +210,7 @@ def test_jobs_blueprint():
     _assert(res_get.status_code == 200, "GET /jobs/1 returns HTTP 200")
     job_data = res_get.get_json()
     _assert(job_data["organization"] == "NIC", "Returns correct job details")
+    _assert(job_data.get("source_id") == 1, "Job details include source_id")
 
     # 3.2: POST /jobs/<id>/status (Update tracking status & notes)
     update_payload = {

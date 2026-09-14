@@ -483,8 +483,9 @@ def extract_with_gemini(
             org_name=org_name or "Unknown Organization",
             notice_text=text[:8000],      # hard cap to stay within free-tier limits
         )
+        gemini_model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model=gemini_model,
             contents=prompt,
             config=genai_types.GenerateContentConfig(
                 response_mime_type="application/json",

@@ -64,6 +64,11 @@ def migrate_database():
                 conn.execute(text("ALTER TABLE jobs ADD COLUMN educational_qualifications VARCHAR(500) DEFAULT ''"))
                 conn.commit()
                 print("  ✓ Migrated: added jobs.educational_qualifications column")
+        if "source_id" not in job_cols:
+            with db.engine.connect() as conn:
+                conn.execute(text("ALTER TABLE jobs ADD COLUMN source_id INTEGER REFERENCES sources(id)"))
+                conn.commit()
+                print("  ✓ Migrated: added jobs.source_id column")
 
 
 def update_legacy_portal_urls() -> int:
