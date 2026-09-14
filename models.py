@@ -427,17 +427,17 @@ DEFAULT_SOURCES = [
     },
     {
         "name": "BARC – Bhabha Atomic Research Centre",
-        "url":  "https://www.barc.gov.in/recruit/",
+        "url":  "https://recruit.barc.gov.in/barcrecruit/",
         "source_category": SourceCategory.TECHNICAL,
     },
     {
         "name": "BEL – Bharat Electronics Limited",
-        "url":  "https://bel-india.in/Content.aspx?ContentId=2",
+        "url":  "https://bel-india.in/careers/",
         "source_category": SourceCategory.PSU,
     },
     {
         "name": "ECIL – Electronics Corporation of India Limited",
-        "url":  "https://www.ecil.co.in/careers/",
+        "url":  "https://www.ecil.co.in/jobs.html",
         "source_category": SourceCategory.PSU,
     },
     # ── Competitive Exams ─────────────────────────────────────────────────────
@@ -465,7 +465,7 @@ DEFAULT_SOURCES = [
     # ── Aggregator Feed ───────────────────────────────────────────────────────
     {
         "name": "FreeJobAlert – Central Govt IT / CS Jobs Feed",
-        "url":  "https://www.freejobalert.com/central-government-jobs/",
+        "url":  "https://www.freejobalert.com/government-jobs/",
         "source_category": SourceCategory.OTHER,
     },
 ]

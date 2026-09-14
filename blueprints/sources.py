@@ -191,3 +191,35 @@ def scrape_source_now(source_id: int):
 
     flash(msg, "info")
     return redirect(request.referrer or url_for("sources.list_sources"))
+
+
+@sources_bp.route("/reset-cache", methods=["POST"])
+def reset_cache():
+    """
+    Wipe orphaned SeenURL entries (or all SeenURL cache) so fresh scraper runs can re-extract.
+    Query param ?all=1 or JSON {"all": true} wipes the entire cache.
+    Default cleans orphaned entries (hashes not matching any active Job).
+    """
+    wipe_all = request.args.get("all", "").lower() in ("1", "true", "yes")
+    data = request.get_json(silent=True) or {}
+    if data.get("all"):
+        wipe_all = True
+
+    try:
+        from db_init import clean_orphaned_seen_urls
+        cleaned = clean_orphaned_seen_urls(wipe_all=wipe_all)
+        mode_str = "all" if wipe_all else "orphaned"
+        msg = f"Deduplication cache reset: {cleaned} {mode_str} entries removed. Scrapers can now re-extract."
+        logger.info(msg)
+        if request.is_json or request.headers.get("Accept") == "application/json":
+            return jsonify({"status": "success", "message": msg, "removed_count": cleaned, "mode": mode_str}), 200
+        flash(msg, "success")
+    except Exception as exc:
+        db.session.rollback()
+        logger.error("Failed to reset dedup cache: %s", exc)
+        if request.is_json or request.headers.get("Accept") == "application/json":
+            return jsonify({"status": "error", "message": str(exc)}), 500
+        flash(f"Failed to reset dedup cache: {exc}", "error")
+
+    return redirect(request.referrer or url_for("sources.list_sources"))
+

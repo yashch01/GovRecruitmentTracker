@@ -9,9 +9,15 @@
             <h1 class="text-xl font-bold text-main">Government Recruitment Portals</h1>
             <p class="text-xs text-muted mt-0.5">Manage official portals, recruitment boards, and career feeds monitored by the autonomous scraping engine.</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
             <span class="badge badge-success text-xs font-semibold">{{ sources|selectattr('is_active')|list|length }} Active</span>
             <span class="badge badge-status text-xs">{{ sources|length }} Total</span>
+            <form action="{{ url_for('sources.reset_cache') }}" method="POST" class="inline" onsubmit="return confirm('Reset URL deduplication cache so all fresh notices can be re-scraped?');">
+                <button type="submit" id="resetCacheBtn" class="btn btn-xs btn-outline text-warning" title="Clean orphaned seen URLs and allow fresh extraction">
+                    <span>🔄</span>
+                    <span>Reset Dedup Cache</span>
+                </button>
+            </form>
         </div>
     </div>
 

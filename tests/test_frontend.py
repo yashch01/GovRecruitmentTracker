@@ -226,6 +226,7 @@ def run_tests():
     _assert("Add Government Portal" in sources_html, "Sources page renders Add Portal form")
     _assert("NIELIT" in sources_html, "Sources page renders configured portal NIELIT")
     _assert("UPSC" in sources_html, "Sources page renders configured portal UPSC")
+    _assert("resetCacheBtn" in sources_html, "Sources page renders Reset Dedup Cache button")
 
     res_settings = client.get("/settings")
     settings_html = res_settings.data.decode("utf-8")

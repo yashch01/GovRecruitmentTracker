@@ -130,7 +130,7 @@ class BARCScraper(_BaseGovScraper):
     """BARC – Bhabha Atomic Research Centre."""
 
     SOURCE_NAME  = "BARC"
-    SOURCE_URL   = "https://www.barc.gov.in/recruit/"
+    SOURCE_URL   = "https://recruit.barc.gov.in/barcrecruit/"
     ORGANIZATION = "BARC"
 
     def scrape(self) -> list[dict[str, Any]]:
@@ -141,20 +141,36 @@ class BELScraper(_BaseGovScraper):
     """BEL – Bharat Electronics Limited."""
 
     SOURCE_NAME  = "BEL"
-    SOURCE_URL   = "https://bel-india.in/Content.aspx?ContentId=2"
+    SOURCE_URL   = "https://bel-india.in/careers/"
+    FALLBACK_URL = "https://jobapply.in/bel-2024/"
     ORGANIZATION = "BEL"
 
     def scrape(self) -> list[dict[str, Any]]:
-        return self._scrape_generic_career_page(
+        results = self._scrape_generic_career_page(
             extra_keywords=["recruitment", "vacancy", "trainee", "engineer", "officer", "notification"]
         )
+        if not results:
+            soup = self.get_soup(self.FALLBACK_URL)
+            if soup:
+                for a in soup.find_all("a", href=True):
+                    href = a["href"].strip()
+                    text = a.get_text(strip=True)
+                    if text and len(text) > 5 and any(k in (text + href).lower() for k in ["recruitment", "apply", "engineer", "officer", "trainee"]):
+                        abs_url = resolve_url(self.FALLBACK_URL, href)
+                        pdf_url = abs_url if abs_url.lower().endswith(".pdf") else ""
+                        results.append(self._build_job_dict(
+                            title=text[:200],
+                            notification_url="" if pdf_url else abs_url,
+                            pdf_url=pdf_url,
+                        ))
+        return results
 
 
 class ECILScraper(_BaseGovScraper):
     """ECIL – Electronics Corporation of India Limited."""
 
     SOURCE_NAME  = "ECIL"
-    SOURCE_URL   = "https://www.ecil.co.in/careers/"
+    SOURCE_URL   = "https://www.ecil.co.in/jobs.html"
     ORGANIZATION = "ECIL"
 
     def scrape(self) -> list[dict[str, Any]]:
@@ -305,7 +321,7 @@ class FreeJobAlertScraper(_BaseGovScraper):
     """FreeJobAlert – Central Government IT/CS Jobs feed."""
 
     SOURCE_NAME  = "FreeJobAlert"
-    SOURCE_URL   = "https://www.freejobalert.com/central-government-jobs/"
+    SOURCE_URL   = "https://www.freejobalert.com/government-jobs/"
     ORGANIZATION = "Various (Central Govt)"
 
     def scrape(self) -> list[dict[str, Any]]:

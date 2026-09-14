@@ -297,6 +297,20 @@ def test_sources_blueprint():
     with app.app_context():
         _assert(db.session.get(Source, 3) is None, "Source #3 removed from DB")
 
+    # 4.7: POST /sources/reset-cache (Reset Dedup Cache)
+    with app.app_context():
+        from dedup import mark_url_seen
+        from models import SeenURL
+        mark_url_seen("https://example.com/orphan_test.pdf", "TEST")
+        _assert(SeenURL.query.count() >= 1, "SeenURL record seeded for reset-cache test")
+
+    res_reset = client.post("/sources/reset-cache", headers={"Accept": "application/json"})
+    _assert(res_reset.status_code == 200, "POST /sources/reset-cache returns 200 OK")
+    reset_data = res_reset.get_json()
+    _assert(reset_data["status"] == "success", "reset-cache returns success status")
+    _assert(reset_data["removed_count"] >= 1, f"reset-cache cleaned orphaned entries (removed {reset_data['removed_count']})")
+
+
 
 # ============================================================================
 # Section 5: Settings Blueprint
