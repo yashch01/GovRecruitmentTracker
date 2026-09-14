@@ -1,0 +1,42 @@
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+
+# Local Environment Variables & Secrets
+.env
+credentials.json
+token.json
+client_secrets.json
+
+# Databases & Runtime State
+*.db
+*.sqlite
+*.sqlite3
+instance/*.db
+recruitment_tracker.db
+
+# PDF Archives (Keep .gitkeep in archives/)
+archives/*
+!archives/.gitkeep
+
+# Operating System & IDE Artifacts
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build & Distribution
+build/
+dist/
+*.egg-info/

@@ -1,0 +1,181 @@
+{% extends "layout.html" %}
+
+{% block title %}Settings &amp; Integrations{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-4xl mx-auto">
+    <div>
+        <h1 class="text-xl font-bold text-main">Settings &amp; Integrations</h1>
+        <p class="text-xs text-muted mt-0.5">Configure your personal profile for age eligibility checks, manage Telegram notifications, and authenticate Google Calendar.</p>
+    </div>
+
+    <!-- User Profile & Eligibility Card -->
+    <div class="card p-6 space-y-4 shadow-sm">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+            <span>👤</span>
+            <span>User Profile &amp; Age Eligibility</span>
+        </h2>
+        <form method="POST" action="{{ url_for('settings.update_settings') }}" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-main">Date of Birth</label>
+                    <input type="date" name="date_of_birth" value="{{ settings.date_of_birth.isoformat() if settings.date_of_birth else '' }}" class="input-field text-sm">
+                    <p class="text-[11px] text-muted mt-1">Used to compute your exact age against recruitment advertisement cut-off dates.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-main">Social / Reservation Category</label>
+                    <select name="category" class="input-field text-sm">
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if settings.category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[11px] text-muted mt-1">Applies standard official age relaxations (+3 yrs for OBC, +5 yrs for SC/ST).</p>
+                </div>
+            </div>
+
+            <!-- Automation & Feature Flags -->
+            <div class="pt-3 border-t border-border space-y-2">
+                <span class="block text-xs font-semibold text-main mb-2">Automation &amp; Feature Flags</span>
+                <div class="space-y-2 text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="telegram_instant_alert" {% if feature_flags.get('telegram_instant_alert', True) %}checked{% endif %} class="rounded border-border text-primary focus:ring-primary">
+                        <span class="text-main">Instantly dispatch Telegram alert when new qualified recruitments are discovered</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="auto_calendar_sync" {% if feature_flags.get('auto_calendar_sync', False) %}checked{% endif %} class="rounded border-border text-primary focus:ring-primary">
+                        <span class="text-main">Automatically push newly parsed deadlines into Google Calendar</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="hide_expired_jobs" {% if feature_flags.get('hide_expired_jobs', False) %}checked{% endif %} class="rounded border-border text-primary focus:ring-primary">
+                        <span class="text-main">Hide past / expired application deadlines from dashboard by default</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button type="submit" class="btn btn-sm btn-primary">Save Profile Preferences</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Telegram Notifications Card -->
+    <div class="card p-6 space-y-4 shadow-sm">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                    <span>✈️</span>
+                    <span>Telegram Alert Bot</span>
+                </h2>
+                <p class="text-xs text-muted mt-0.5">Receive instantaneous notifications on your mobile phone or desktop whenever recruitments match your criteria.</p>
+            </div>
+            <div>
+                {% if telegram_connected %}
+                    <span class="badge badge-success">✓ Connected</span>
+                {% else %}
+                    <span class="badge badge-expired">Not Configured</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('settings.update_settings') }}" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-main">Bot Token (from @BotFather)</label>
+                    <input type="password" name="telegram_bot_token" value="{{ settings.telegram_bot_token or '' }}" placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxYZ" class="input-field text-sm font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-main">Chat ID (User or Channel ID)</label>
+                    <input type="text" name="telegram_chat_id" value="{{ settings.telegram_chat_id or '' }}" placeholder="e.g. 123456789 or -100123456789" class="input-field text-sm font-mono">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+                <button type="submit" class="btn btn-sm btn-primary">Save Bot Credentials</button>
+            </div>
+        </form>
+
+        <!-- Test Telegram Button -->
+        <div class="pt-3 border-t border-border flex items-center justify-between">
+            <span class="text-xs text-muted">Verify your bot credentials by sending a live test notification right now.</span>
+            <form method="POST" action="{{ url_for('settings.test_telegram') }}" class="inline">
+                <button type="submit" class="btn btn-sm btn-outline">🚀 Test Connection</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Google Calendar Integration Card -->
+    <div class="card p-6 space-y-4 shadow-sm">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                    <span>📅</span>
+                    <span>Google Calendar Integration</span>
+                </h2>
+                <p class="text-xs text-muted mt-0.5">Autonomous sync for application deadlines and written exam dates with 3-day and 1-day popup alert overrides.</p>
+            </div>
+            <div>
+                {% if calendar_connected %}
+                    <span class="badge badge-success">✓ Connected</span>
+                {% else %}
+                    <span class="badge badge-expired">Not Connected</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="p-4 rounded-lg bg-surface-alt border border-border text-xs space-y-2">
+            <p class="font-semibold text-main">One-time OAuth2 Setup:</p>
+            <ol class="list-decimal list-inside space-y-1 text-muted">
+                <li>Enable Google Calendar API in Google Cloud Console.</li>
+                <li>Create OAuth 2.0 Client ID and download as <code class="font-mono text-primary font-semibold">credentials.json</code> in project root.</li>
+                <li>Click the button below to authenticate and write <code class="font-mono text-primary font-semibold">token.json</code>.</li>
+            </ol>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-1">
+            {% if calendar_connected %}
+                <form action="{{ url_for('auth.google_disconnect') }}" method="POST" class="inline">
+                    <button type="submit" class="btn btn-sm btn-danger">Disconnect Calendar</button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('auth.google_auth') }}" class="btn btn-sm btn-primary">🔗 Connect with Google Calendar</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- iCal (.ics) Calendar Subscription Feed Card -->
+    <div class="card p-6 space-y-4 shadow-sm">
+        <div class="flex items-center justify-between">
+            <div>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                    <span>🗓️</span>
+                    <span>iCal (.ics) One-Click Calendar Feed</span>
+                </h2>
+                <p class="text-xs text-muted mt-0.5">Subscribe on your iPhone, iPad, Mac, Android, or Outlook with zero OAuth credentials needed.</p>
+            </div>
+            <span class="badge badge-success">✓ Always Live</span>
+        </div>
+
+        <div class="p-4 rounded-lg bg-surface-alt border border-border text-xs space-y-2">
+            <p class="font-semibold text-main">Direct Calendar Subscription URL:</p>
+            <div class="flex items-center gap-2">
+                <input type="text" id="icalFeedUrl" readonly value="{{ request.url_root.rstrip('/') }}{{ url_for('dashboard.ical_feed') }}" class="input-field text-xs font-mono select-all">
+                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('icalFeedUrl').value); window.showToast('iCal URL copied to clipboard!', 'success')" class="btn btn-xs btn-outline whitespace-nowrap">
+                    📋 Copy
+                </button>
+            </div>
+            <p class="text-muted text-[11px] mt-1">
+                Paste this URL into Apple Calendar, Google Calendar (Add by URL), or Outlook to automatically receive deadlines with 3-day and 1-day reminders.
+            </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-1">
+            <a href="{{ url_for('dashboard.ical_feed') }}" class="btn btn-sm btn-primary" download="recruitment_deadlines.ics">
+                <span>📥 Download .ics File</span>
+            </a>
+            <a href="webcal://{{ request.host }}{{ url_for('dashboard.ical_feed') }}" class="btn btn-sm btn-secondary">
+                <span>📲 Subscribe in Calendar App</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

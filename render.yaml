@@ -1,0 +1,58 @@
+# ==============================================================================
+# Render Blueprint Specification — GovRecruitmentTracker
+# https://render.com/docs/blueprint-spec
+#
+# Free Tier Optimized:
+#   - Automated Python runtime environment
+#   - Autonomous DB initialization on build
+#   - High-concurrency threaded Gunicorn WSGI server
+#   - Built-in zero-cost environment variable management
+# ==============================================================================
+
+services:
+  - type: web
+    name: gov-recruitment-tracker
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: "pip install --upgrade pip && pip install -r requirements.txt && flask init-db"
+    startCommand: "gunicorn app:app --config gunicorn_config.py"
+    healthCheckPath: /api/health
+    autoDeploy: true
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+
+      - key: FLASK_APP
+        value: app.py
+
+      - key: FLASK_ENV
+        value: production
+
+      - key: SECRET_KEY
+        generateValue: true
+
+      - key: DATABASE_URL
+        value: sqlite:///instance/recruitment_tracker.db
+
+      - key: GEMINI_API_KEY
+        sync: false
+        # Set your free Google AI Studio key in Render Dashboard
+
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+        # Optional: Bot token from @BotFather (e.g. 123456:ABC-DEF)
+
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+        # Optional: User ID or group chat ID
+
+      - key: WEB_CONCURRENCY
+        value: "2"
+
+      - key: GUNICORN_THREADS
+        value: "4"
+
+      - key: LOG_LEVEL
+        value: info

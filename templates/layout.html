@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GovRecruitmentTracker{% endblock %} — Indian Govt CS/IT & Exams</title>
+    
+    <!-- Immediate Theme Application to Prevent FOUC -->
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('grt-theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
+
+    <!-- Google Fonts: Inter (UI) + JetBrains Mono (Data/Badges) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- App Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navbar -->
+    <header class="navbar-header">
+        <div class="navbar-container">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-2 font-bold text-lg tracking-tight">
+                    <span class="text-2xl" aria-hidden="true">🏛️</span>
+                    <span class="gradient-text font-bold">GovRecruitmentTracker</span>
+                </a>
+                <span class="badge badge-csit text-[10px] hidden sm:inline-flex">CS/IT &amp; GOV</span>
+            </div>
+
+            <!-- Desktop Navigation Links -->
+            <nav class="hidden md:flex items-center gap-2">
+                <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">Dashboard</a>
+                <a href="{{ url_for('sources.list_sources') }}" class="nav-link {% if request.endpoint == 'sources.list_sources' %}active{% endif %}">Portals</a>
+                <a href="{{ url_for('settings.view_settings') }}" class="nav-link {% if request.endpoint == 'settings.view_settings' %}active{% endif %}">Settings</a>
+            </nav>
+
+            <!-- Actions: Fetch Now + Calendar Sync + Theme Toggle + Mobile Toggle -->
+            <div class="flex items-center gap-2">
+                <form action="{{ url_for('jobs.fetch_now') }}" method="POST" class="inline">
+                    <button type="submit" id="fetchNowBtn" class="btn btn-primary btn-xs sm:btn-sm" title="Trigger Autonomous Scraper Run">
+                        <span>⚡</span>
+                        <span class="hidden sm:inline">Fetch Now</span>
+                    </button>
+                </form>
+
+                <form action="{{ url_for('jobs.sync_calendar_all') }}" method="POST" class="inline">
+                    <button type="submit" id="syncCalBtn" class="btn btn-secondary btn-xs sm:btn-sm" title="Sync All Deadlines to Google Calendar">
+                        <span>📅</span>
+                        <span class="hidden sm:inline">Sync Cal</span>
+                    </button>
+                </form>
+
+                <a href="{{ url_for('dashboard.ical_feed') }}" class="btn btn-outline btn-xs sm:btn-sm" title="iCal (.ics) Calendar Subscription Feed" download="recruitment_deadlines.ics">
+                    <span>🗓️</span>
+                    <span class="hidden lg:inline">.ics Feed</span>
+                </a>
+
+                <!-- Theme Toggle Button -->
+                <button id="themeToggleBtn" class="btn-icon" title="Toggle Dark/Light Mode" aria-label="Toggle Theme">
+                    <span id="themeIcon">🌙</span>
+                </button>
+
+                <!-- Mobile Menu Button -->
+                <button id="mobileMenuBtn" class="btn-icon md:hidden" title="Toggle Menu" aria-label="Open Mobile Menu">
+                    <span>☰</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobileMenu" class="hidden md:hidden border-t border-border bg-surface-alt px-4 py-3 space-y-2">
+            <a href="{{ url_for('dashboard.index') }}" class="block nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">Dashboard</a>
+            <a href="{{ url_for('sources.list_sources') }}" class="block nav-link {% if request.endpoint == 'sources.list_sources' %}active{% endif %}">Portals</a>
+            <a href="{{ url_for('settings.view_settings') }}" class="block nav-link {% if request.endpoint == 'settings.view_settings' %}active{% endif %}">Settings</a>
+        </div>
+    </header>
+
+    <!-- Flash Messages -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 w-full">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="space-y-2">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} p-3 rounded-lg border text-sm flex items-center justify-between shadow-sm">
+                            <div class="flex items-center gap-2">
+                                <span>{% if category == 'success' %}✅{% elif category == 'error' %}❌{% elif category == 'warning' %}⚠️{% else %}ℹ️{% endif %}</span>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button onclick="this.parentElement.remove()" class="text-xs font-bold px-2 cursor-pointer opacity-70 hover:opacity-100">&times;</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Page Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-border py-6 text-center text-xs text-muted mt-auto bg-surface-alt/50">
+        <div class="max-w-7xl mx-auto px-4 space-y-1">
+            <p class="font-semibold text-main">GovRecruitmentTracker &copy; 2024</p>
+            <p>Autonomous Indian Government CS/IT &amp; General Recruitment Pipeline · Zero-Cost AI Extraction · Google Calendar Sync</p>
+        </div>
+    </footer>
+
+    <!-- Slide-over Tracking Drawer -->
+    <div id="jobDrawerBackdrop" class="drawer-backdrop" aria-hidden="true"></div>
+    <div id="jobDrawerPanel" class="drawer-panel" role="dialog" aria-labelledby="drawerJobTitle" aria-modal="true">
+        <div class="drawer-header">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-primary">Application Tracker</span>
+                <h3 id="drawerJobTitle" class="text-sm font-bold mt-1 text-main truncate max-w-sm">Job Details</h3>
+            </div>
+            <button id="closeDrawerBtn" class="btn-icon" aria-label="Close Drawer">&times;</button>
+        </div>
+
+        <div class="drawer-body">
+            <form id="jobDrawerForm" class="space-y-4">
+                <input type="hidden" id="drawerJobId">
+
+                <!-- Important Dates Info Box -->
+                <div class="p-3 rounded-lg bg-surface-alt border border-border grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                        <span class="text-muted block">Last Date</span>
+                        <span id="drawerDeadline" class="font-semibold text-main">Refer Notice</span>
+                    </div>
+                    <div>
+                        <span class="text-muted block">Exam Date</span>
+                        <span id="drawerExamDate" class="font-semibold text-main">TBA</span>
+                    </div>
+                </div>
+
+                <!-- Application Status Select -->
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-main">Application Status</label>
+                    <select id="drawerStatus" class="input-field">
+                        <option value="Not Applied">Not Applied</option>
+                        <option value="Applied">Applied</option>
+                        <option value="Admit Card Out">Admit Card Out</option>
+                        <option value="Exam Done">Exam Done</option>
+                        <option value="Selected">Selected</option>
+                        <option value="Archived">Archived</option>
+                    </select>
+                </div>
+
+                <!-- Registration Number -->
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-main">Registration / Application ID</label>
+                    <input type="text" id="drawerRegNum" placeholder="e.g. NIC-2024-8849" class="input-field">
+                </div>
+
+                <!-- Roll Number -->
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-main">Admit Card / Roll Number</label>
+                    <input type="text" id="drawerRollNum" placeholder="e.g. 24090123" class="input-field">
+                </div>
+
+                <!-- Tracking Notes -->
+                <div>
+                    <label class="block text-xs font-semibold mb-1 text-main">Personal Notes &amp; Preparation Status</label>
+                    <textarea id="drawerNotes" rows="4" placeholder="e.g. Exam center: New Delhi. Syllabus: OS, DBMS, Networks..." class="input-field resize-y"></textarea>
+                </div>
+
+                <div class="drawer-footer">
+                    <button type="button" onclick="window.closeJobDrawer()" class="btn btn-sm btn-outline">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Main JavaScript -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
