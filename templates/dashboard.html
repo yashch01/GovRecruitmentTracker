@@ -4,32 +4,57 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Stat Cards KPI Row -->
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
-        <a href="{{ url_for('dashboard.index') }}" class="card p-4 card-hoverable block text-left">
-            <span class="text-xs font-semibold uppercase tracking-wider text-muted">Total Tracked</span>
-            <p class="text-2xl font-bold mt-1 text-primary">{{ metrics.total_jobs }}</p>
+    <!-- Bento-Grid KPI Stats -->
+    <div class="bento-kpi-grid">
+        <!-- 1. Total Tracked -->
+        <a href="{{ url_for('dashboard.index') }}" class="bento-kpi-card bento-kpi-cyan" title="View all tracked recruitments">
+            <div class="bento-kpi-header">
+                <span class="bento-kpi-label">Total Tracked</span>
+                <span class="bento-kpi-icon" aria-hidden="true">📈</span>
+            </div>
+            <div class="bento-kpi-value text-primary">{{ metrics.total_jobs }}</div>
         </a>
-        <a href="{{ url_for('dashboard.index', category='Technical CS/IT', gate='non_gate') }}" class="card p-4 card-hoverable block text-left">
-            <span class="text-xs font-semibold uppercase tracking-wider text-muted">Non-GATE CS/IT</span>
-            <p class="text-2xl font-bold mt-1 text-success">{{ metrics.non_gate_cs_it }}</p>
+
+        <!-- 2. Non-GATE CS/IT -->
+        <a href="{{ url_for('dashboard.index', category='Technical CS/IT', gate='non_gate') }}" class="bento-kpi-card bento-kpi-emerald" title="View Direct / Non-GATE CS/IT recruitments">
+            <div class="bento-kpi-header">
+                <span class="bento-kpi-label">Non-GATE CS/IT</span>
+                <span class="bento-kpi-icon" aria-hidden="true">💻</span>
+            </div>
+            <div class="bento-kpi-value text-success">{{ metrics.non_gate_cs_it }}</div>
         </a>
-        <a href="{{ url_for('dashboard.index', category='Competitive Exam') }}" class="card p-4 card-hoverable block text-left">
-            <span class="text-xs font-semibold uppercase tracking-wider text-muted">Gov Exams</span>
-            <p class="text-2xl font-bold mt-1 text-info">{{ metrics.competitive_exams }}</p>
+
+        <!-- 3. Gov Exams -->
+        <a href="{{ url_for('dashboard.index', category='Competitive Exam') }}" class="bento-kpi-card bento-kpi-indigo" title="View Competitive Government Exams">
+            <div class="bento-kpi-header">
+                <span class="bento-kpi-label">Gov Exams</span>
+                <span class="bento-kpi-icon" aria-hidden="true">🏛️</span>
+            </div>
+            <div class="bento-kpi-value text-info">{{ metrics.competitive_exams }}</div>
         </a>
-        <a href="{{ url_for('dashboard.index', status='Applied') }}" class="card p-4 card-hoverable block text-left">
-            <span class="text-xs font-semibold uppercase tracking-wider text-muted">Applied</span>
-            <p class="text-2xl font-bold mt-1 text-warning">{{ metrics.applied_count }}</p>
+
+        <!-- 4. Applied -->
+        <a href="{{ url_for('dashboard.index', status='Applied') }}" class="bento-kpi-card bento-kpi-amber" title="View Applied Recruitments">
+            <div class="bento-kpi-header">
+                <span class="bento-kpi-label">Applied</span>
+                <span class="bento-kpi-icon" aria-hidden="true">📝</span>
+            </div>
+            <div class="bento-kpi-value text-warning">{{ metrics.applied_count }}</div>
         </a>
-        <div class="card p-4 col-span-2 md:col-span-1 text-left">
-            <span class="text-xs font-semibold uppercase tracking-wider text-muted">Calendar Synced</span>
-            <p class="text-2xl font-bold mt-1 text-primary">{{ metrics.synced_count }}</p>
+
+        <!-- 5. Calendar Synced -->
+        <div class="bento-kpi-card bento-kpi-pink">
+            <div class="bento-kpi-header">
+                <span class="bento-kpi-label">Calendar Synced</span>
+                <span class="bento-kpi-icon" aria-hidden="true">📅</span>
+            </div>
+            <div class="bento-kpi-value text-primary">{{ metrics.synced_count }}</div>
         </div>
     </div>
 
-    <!-- Filter & Search Bar -->
-    <form method="GET" action="{{ url_for('dashboard.index') }}" class="card p-4 space-y-4 shadow-sm">
+    <!-- Sleek Unified Filter Card -->
+    <form method="GET" action="{{ url_for('dashboard.index') }}" class="filter-card space-y-4">
+        <!-- Top Controls Grid: Search + Dropdowns -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <!-- Search -->
             <div class="col-span-1 sm:col-span-2">
@@ -66,15 +91,30 @@
             </div>
         </div>
 
+        <!-- Bottom Controls Row: Urgency Glowing Pill Chips + Action Buttons -->
         <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border text-xs">
-            <!-- Urgency quick pills -->
+            <!-- Urgency Glowing Interactive Pill Chips -->
             <div class="flex flex-wrap items-center gap-2">
-                <span class="text-muted font-medium">Urgency:</span>
-                <a href="{{ url_for('dashboard.index', urgency='all', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill {% if current_urgency == 'all' %}pill-active{% endif %}">All</a>
-                <a href="{{ url_for('dashboard.index', urgency='urgent', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill {% if current_urgency == 'urgent' %}pill-active{% endif %}">🔴 &lt; 7 Days</a>
-                <a href="{{ url_for('dashboard.index', urgency='moderate', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill {% if current_urgency == 'moderate' %}pill-active{% endif %}">🟡 7-30 Days</a>
-                <a href="{{ url_for('dashboard.index', urgency='relaxed', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill {% if current_urgency == 'relaxed' %}pill-active{% endif %}">🟢 &gt; 30 Days</a>
-                <a href="{{ url_for('dashboard.index', urgency='expired', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill {% if current_urgency == 'expired' %}pill-active{% endif %}">⚪ Expired</a>
+                <span class="text-muted font-semibold tracking-wide uppercase text-[11px]">Urgency:</span>
+                <a href="{{ url_for('dashboard.index', urgency='all', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill {% if current_urgency == 'all' %}pill-active{% endif %}">
+                    <span>All</span>
+                </a>
+                <a href="{{ url_for('dashboard.index', urgency='urgent', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill pill-urgent {% if current_urgency == 'urgent' %}pill-active{% endif %}">
+                    <span>🔴</span>
+                    <span>&lt; 7 Days</span>
+                </a>
+                <a href="{{ url_for('dashboard.index', urgency='moderate', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill pill-moderate {% if current_urgency == 'moderate' %}pill-active{% endif %}">
+                    <span>🟡</span>
+                    <span>7-30 Days</span>
+                </a>
+                <a href="{{ url_for('dashboard.index', urgency='relaxed', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill pill-relaxed {% if current_urgency == 'relaxed' %}pill-active{% endif %}">
+                    <span>🟢</span>
+                    <span>&gt; 30 Days</span>
+                </a>
+                <a href="{{ url_for('dashboard.index', urgency='expired', category=current_category, gate=current_gate, status=current_status, search=current_search) }}" class="pill pill-expired {% if current_urgency == 'expired' %}pill-active{% endif %}">
+                    <span>⚪</span>
+                    <span>Expired</span>
+                </a>
             </div>
 
             <!-- Action buttons & Desktop View Switcher -->
@@ -97,7 +137,7 @@
     </div>
 
     {% if jobs %}
-        <!-- ─── 1. Desktop Dense Table View (>= 1024px) ────────────────────────── -->
+        <!-- ─── 1. Laptop / Desktop Dense Table View (>= 900px) ────────────────── -->
         <div id="desktopTableView" class="jobs-table-container desktop-only shadow-sm">
             <table class="dense-table" id="jobsTable">
                 <thead>
@@ -113,16 +153,16 @@
                 </thead>
                 <tbody class="divide-y divide-border">
                     {% for job in jobs %}
-                        <tr class="hover:bg-surface-hover/60 transition duration-150 job-row" data-job-id="{{ job.id }}" data-org="{{ job.organization|lower }}" data-title="{{ job.title|lower }}" data-category="{{ job.exam_category|lower }}" data-pay="{{ (job.pay_level_or_ctc or '')|lower }}" data-deadline="{{ job.last_date or '' }}" data-status="{{ job.user_status|lower }}" data-urgency="{{ job.urgency_label }}">
+                        <tr class="hover:bg-surface-hover transition duration-150 job-row" data-job-id="{{ job.id }}" data-org="{{ job.organization|lower }}" data-title="{{ job.title|lower }}" data-category="{{ job.exam_category|lower }}" data-pay="{{ (job.pay_level_or_ctc or '')|lower }}" data-deadline="{{ job.last_date or '' }}" data-status="{{ job.user_status|lower }}" data-urgency="{{ job.urgency_label }}">
                             <!-- Organization -->
                             <td class="font-bold text-main whitespace-nowrap">
-                                <span class="text-primary">{{ job.organization }}</span>
+                                <span class="text-primary font-bold">{{ job.organization }}</span>
                             </td>
 
                             <!-- Title & Badges -->
                             <td>
-                                <div class="space-y-1">
-                                    <div class="font-semibold text-main text-sm">{{ job.title }}</div>
+                                <div class="space-y-1.5">
+                                    <div class="font-semibold text-main text-sm leading-snug">{{ job.title }}</div>
                                     <div class="flex flex-wrap gap-1">
                                         {% if job.gate_required %}
                                             <span class="badge badge-gate">[GATE Req]</span>
@@ -147,14 +187,14 @@
                             </td>
 
                             <!-- Pay Scale -->
-                            <td class="text-muted text-xs whitespace-nowrap">
+                            <td class="text-muted text-xs whitespace-nowrap font-mono">
                                 {{ job.pay_level_or_ctc or 'Standard Gov' }}
                             </td>
 
                             <!-- Deadline & Urgency -->
                             <td class="whitespace-nowrap">
                                 <div class="space-y-0.5">
-                                    <div class="font-mono text-xs text-main">{{ job.last_date or 'Refer Notice' }}</div>
+                                    <div class="font-mono text-xs text-main font-semibold">{{ job.last_date or 'Refer Notice' }}</div>
                                     {% if job.urgency_label == 'urgent' %}
                                         <span class="badge badge-urgent">🔴 {{ job.days_remaining }}d left</span>
                                     {% elif job.urgency_label == 'moderate' %}
@@ -169,7 +209,7 @@
 
                             <!-- Status Badge -->
                             <td class="whitespace-nowrap">
-                                <span class="badge badge-status" data-job-status-badge="{{ job.id }}">{{ job.user_status }}</span>
+                                <span class="badge badge-status font-medium" data-job-status-badge="{{ job.id }}">{{ job.user_status }}</span>
                             </td>
 
                             <!-- Actions -->
@@ -197,16 +237,16 @@
             </table>
         </div>
 
-        <!-- ─── 2. Responsive Mobile & Tablet Cards View ──────────────────────── -->
+        <!-- ─── 2. Mobile & iPad Cards View (< 900px) ─────────────────────────── -->
         <div id="jobsCardsView" class="grid grid-cols-1 gap-4 mobile-only">
             {% for job in jobs %}
                 <div class="job-card urgency-{{ job.urgency_label }}" data-job-id="{{ job.id }}" data-org="{{ job.organization|lower }}" data-title="{{ job.title|lower }}" data-category="{{ job.exam_category|lower }}" data-pay="{{ (job.pay_level_or_ctc or '')|lower }}" data-deadline="{{ job.last_date or '' }}" data-status="{{ job.user_status|lower }}" data-urgency="{{ job.urgency_label }}">
-                    <div class="space-y-3">
+                    <div class="space-y-3.5">
                         <!-- Top Metadata Row -->
                         <div class="flex items-center justify-between gap-2 flex-wrap">
                             <span class="badge badge-category">{{ job.exam_category }}</span>
                             
-                            <div class="flex items-center gap-1">
+                            <div class="flex items-center gap-1.5">
                                 {% if job.urgency_label == 'urgent' %}
                                     <span class="badge badge-urgent">🔴 {{ job.days_remaining }}d left</span>
                                 {% elif job.urgency_label == 'moderate' %}
@@ -216,7 +256,7 @@
                                 {% elif job.urgency_label == 'expired' %}
                                     <span class="badge badge-expired">Expired</span>
                                 {% endif %}
-                                <span class="badge badge-status" data-job-status-badge="{{ job.id }}">{{ job.user_status }}</span>
+                                <span class="badge badge-status font-medium" data-job-status-badge="{{ job.id }}">{{ job.user_status }}</span>
                             </div>
                         </div>
 
@@ -227,7 +267,7 @@
                         </div>
 
                         <!-- Tags Row: Non-GATE, Level 10+, CS/IT -->
-                        <div class="flex flex-wrap gap-1">
+                        <div class="flex flex-wrap gap-1.5">
                             {% if job.gate_required %}
                                 <span class="badge badge-gate">[GATE Req]</span>
                             {% else %}
@@ -244,51 +284,51 @@
                         </div>
 
                         <!-- Highlights Grid -->
-                        <div class="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/50 text-muted">
+                        <div class="grid grid-cols-2 gap-2 text-xs p-2.5 rounded-xl bg-surface-alt/70 border border-border/50 text-muted">
                             <div>
-                                <span class="block text-[11px] text-faint uppercase font-semibold">Last Date</span>
+                                <span class="block text-[10px] text-faint uppercase font-bold tracking-wider">Last Date</span>
                                 <span class="font-mono text-main font-semibold">{{ job.last_date or 'Refer Notice' }}</span>
                             </div>
                             <div>
-                                <span class="block text-[11px] text-faint uppercase font-semibold">Exam Date</span>
-                                <span class="font-mono text-main">{{ job.exam_date or 'TBA' }}</span>
+                                <span class="block text-[10px] text-faint uppercase font-bold tracking-wider">Exam Date</span>
+                                <span class="font-mono text-main font-semibold">{{ job.exam_date or 'TBA' }}</span>
                             </div>
                             <div>
-                                <span class="block text-[11px] text-faint uppercase font-semibold">GATE Requirement</span>
+                                <span class="block text-[10px] text-faint uppercase font-bold tracking-wider">GATE Requirement</span>
                                 <span class="font-medium text-main">{% if job.gate_required %}Yes (GATE Req){% else %}No (Direct / Exam){% endif %}</span>
                             </div>
                             <div>
-                                <span class="block text-[11px] text-faint uppercase font-semibold">Pay Scale</span>
-                                <span class="font-medium text-main truncate block">{{ job.pay_level_or_ctc or 'Standard Gov' }}</span>
+                                <span class="block text-[10px] text-faint uppercase font-bold tracking-wider">Pay Scale</span>
+                                <span class="font-medium text-main truncate block font-mono">{{ job.pay_level_or_ctc or 'Standard Gov' }}</span>
                             </div>
                         </div>
 
                         {% if job.educational_qualifications %}
-                            <p class="text-xs text-muted italic bg-surface-alt/60 p-2 rounded-lg border border-border/40">
+                            <p class="text-xs text-muted italic bg-surface-alt/50 p-2.5 rounded-xl border border-border/40">
                                 🎓 {{ job.educational_qualifications }}
                             </p>
                         {% endif %}
 
-                        <!-- Card Action Buttons -->
+                        <!-- Card Action Buttons (min-44px Touch Targets) -->
                         <div class="flex items-center justify-between gap-2 pt-2 border-t border-border">
-                            <div class="flex items-center gap-1.5">
-                                <button type="button" onclick="window.openJobDrawer({{ job.id }})" class="btn btn-xs btn-primary">
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="window.openJobDrawer({{ job.id }})" class="btn btn-sm btn-primary">
                                     ✏️ Track
                                 </button>
-                                <button type="button" onclick="window.syncJobToCalendar({{ job.id }}, this)" class="btn btn-xs {% if job.is_synced_to_calendar %}btn-success{% else %}btn-outline{% endif %}">
+                                <button type="button" onclick="window.syncJobToCalendar({{ job.id }}, this)" class="btn btn-sm {% if job.is_synced_to_calendar %}btn-success{% else %}btn-outline{% endif %}">
                                     📅 {% if job.is_synced_to_calendar %}Synced{% else %}Cal{% endif %}
                                 </button>
-                                <button type="button" onclick="window.sendJobTelegramAlert({{ job.id }}, this)" class="btn btn-xs btn-outline" title="Send Telegram Alert">
+                                <button type="button" onclick="window.sendJobTelegramAlert({{ job.id }}, this)" class="btn btn-sm btn-outline" title="Send Telegram Alert">
                                     ✈️
                                 </button>
                             </div>
 
-                            <div class="flex items-center gap-1">
+                            <div class="flex items-center gap-1.5">
                                 {% if job.pdf_url %}
-                                    <a href="{{ job.pdf_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline">📄 PDF</a>
+                                    <a href="{{ job.pdf_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline">📄 PDF</a>
                                 {% endif %}
                                 {% if job.notification_url %}
-                                    <a href="{{ job.notification_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-xs btn-outline">🌐 Notice</a>
+                                    <a href="{{ job.notification_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline">🌐 Notice</a>
                                 {% endif %}
                             </div>
                         </div>
@@ -298,7 +338,7 @@
         </div>
     {% else %}
         <!-- Empty State -->
-        <div class="card p-12 text-center text-muted space-y-3 shadow-sm">
+        <div class="card p-12 text-center text-muted space-y-3 shadow-card">
             <span class="text-5xl block" role="img" aria-label="Inbox Empty">📭</span>
             <p class="text-base font-bold text-main">No recruitment notifications match your current filters.</p>
             <p class="text-xs max-w-md mx-auto">Click "Fetch Now" at the top to trigger an autonomous scan of all configured government portals, or adjust your search criteria.</p>

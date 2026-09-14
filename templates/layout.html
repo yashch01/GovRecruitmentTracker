@@ -15,37 +15,48 @@
         })();
     </script>
 
-    <!-- Google Fonts: Inter (UI) + JetBrains Mono (Data/Badges) -->
+    <!-- Google Fonts: Inter (UI) + JetBrains Mono (Data/Badges/Metrics) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- App Stylesheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- Top Navbar -->
+    <!-- Top Navbar (Structured 3-Part Flex Container) -->
     <header class="navbar-header">
         <div class="navbar-container">
-            <!-- Brand Logo -->
-            <div class="flex items-center gap-3">
-                <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-2 font-bold text-lg tracking-tight">
+            <!-- Part 1: [Logo + Badge] -->
+            <div class="navbar-brand-area">
+                <a href="{{ url_for('dashboard.index') }}" class="navbar-logo">
                     <span class="text-2xl" aria-hidden="true">🏛️</span>
-                    <span class="gradient-text font-bold">GovRecruitmentTracker</span>
+                    <span class="gradient-text font-bold tracking-tight">GovRecruitmentTracker</span>
                 </a>
                 <span class="badge badge-csit text-[10px] hidden sm:inline-flex">CS/IT &amp; GOV</span>
             </div>
 
-            <!-- Desktop Navigation Links -->
-            <nav class="hidden md:flex items-center gap-2">
-                <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">Dashboard</a>
-                <a href="{{ url_for('sources.list_sources') }}" class="nav-link {% if request.endpoint == 'sources.list_sources' %}active{% endif %}">Portals</a>
-                <a href="{{ url_for('settings.view_settings') }}" class="nav-link {% if request.endpoint == 'settings.view_settings' %}active{% endif %}">Settings</a>
+            <!-- Part 2: [Pill Navigation (Dashboard · Portals · Settings)] -->
+            <nav class="navbar-center-nav" aria-label="Primary Navigation">
+                <div class="nav-pill-container">
+                    <a href="{{ url_for('dashboard.index') }}" class="nav-pill-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                        <span>📊</span>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="{{ url_for('sources.list_sources') }}" class="nav-pill-link {% if request.endpoint == 'sources.list_sources' %}active{% endif %}">
+                        <span>🌐</span>
+                        <span>Portals</span>
+                    </a>
+                    <a href="{{ url_for('settings.view_settings') }}" class="nav-pill-link {% if request.endpoint == 'settings.view_settings' %}active{% endif %}">
+                        <span>⚙️</span>
+                        <span>Settings</span>
+                    </a>
+                </div>
             </nav>
 
-            <!-- Actions: Fetch Now + Calendar Sync + Theme Toggle + Mobile Toggle -->
-            <div class="flex items-center gap-2">
+            <!-- Part 3: [Action Buttons (Fetch Now, Sync Cal, .ics Feed, Theme Toggle, Mobile Menu)] -->
+            <div class="navbar-actions-area">
                 <form action="{{ url_for('jobs.fetch_now') }}" method="POST" class="inline">
                     <button type="submit" id="fetchNowBtn" class="btn btn-primary btn-xs sm:btn-sm" title="Trigger Autonomous Scraper Run">
                         <span>⚡</span>
@@ -70,18 +81,18 @@
                     <span id="themeIcon">🌙</span>
                 </button>
 
-                <!-- Mobile Menu Button -->
+                <!-- Mobile Menu Hamburger Button -->
                 <button id="mobileMenuBtn" class="btn-icon md:hidden" title="Toggle Menu" aria-label="Open Mobile Menu">
                     <span>☰</span>
                 </button>
             </div>
         </div>
 
-        <!-- Mobile Navigation Menu -->
+        <!-- Mobile Navigation Menu Drawer -->
         <div id="mobileMenu" class="hidden md:hidden border-t border-border bg-surface-alt px-4 py-3 space-y-2">
-            <a href="{{ url_for('dashboard.index') }}" class="block nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">Dashboard</a>
-            <a href="{{ url_for('sources.list_sources') }}" class="block nav-link {% if request.endpoint == 'sources.list_sources' %}active{% endif %}">Portals</a>
-            <a href="{{ url_for('settings.view_settings') }}" class="block nav-link {% if request.endpoint == 'settings.view_settings' %}active{% endif %}">Settings</a>
+            <a href="{{ url_for('dashboard.index') }}" class="block nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">📊 Dashboard</a>
+            <a href="{{ url_for('sources.list_sources') }}" class="block nav-link {% if request.endpoint == 'sources.list_sources' %}active{% endif %}">🌐 Portals</a>
+            <a href="{{ url_for('settings.view_settings') }}" class="block nav-link {% if request.endpoint == 'settings.view_settings' %}active{% endif %}">⚙️ Settings</a>
         </div>
     </header>
 
@@ -110,7 +121,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="border-t border-border py-6 text-center text-xs text-muted mt-auto bg-surface-alt/50">
+    <footer class="border-t border-border py-6 text-center text-xs text-muted mt-auto bg-surface-alt/40">
         <div class="max-w-7xl mx-auto px-4 space-y-1">
             <p class="font-semibold text-main">GovRecruitmentTracker &copy; 2024</p>
             <p>Autonomous Indian Government CS/IT &amp; General Recruitment Pipeline · Zero-Cost AI Extraction · Google Calendar Sync</p>
@@ -133,14 +144,14 @@
                 <input type="hidden" id="drawerJobId">
 
                 <!-- Important Dates Info Box -->
-                <div class="p-3 rounded-lg bg-surface-alt border border-border grid grid-cols-2 gap-2 text-xs">
+                <div class="p-3 rounded-xl bg-surface-alt border border-border grid grid-cols-2 gap-2 text-xs">
                     <div>
                         <span class="text-muted block">Last Date</span>
-                        <span id="drawerDeadline" class="font-semibold text-main">Refer Notice</span>
+                        <span id="drawerDeadline" class="font-semibold text-main font-mono">Refer Notice</span>
                     </div>
                     <div>
                         <span class="text-muted block">Exam Date</span>
-                        <span id="drawerExamDate" class="font-semibold text-main">TBA</span>
+                        <span id="drawerExamDate" class="font-semibold text-main font-mono">TBA</span>
                     </div>
                 </div>
 
@@ -160,13 +171,13 @@
                 <!-- Registration Number -->
                 <div>
                     <label class="block text-xs font-semibold mb-1 text-main">Registration / Application ID</label>
-                    <input type="text" id="drawerRegNum" placeholder="e.g. NIC-2024-8849" class="input-field">
+                    <input type="text" id="drawerRegNum" placeholder="e.g. NIC-2024-8849" class="input-field font-mono">
                 </div>
 
                 <!-- Roll Number -->
                 <div>
                     <label class="block text-xs font-semibold mb-1 text-main">Admit Card / Roll Number</label>
-                    <input type="text" id="drawerRollNum" placeholder="e.g. 24090123" class="input-field">
+                    <input type="text" id="drawerRollNum" placeholder="e.g. 24090123" class="input-field font-mono">
                 </div>
 
                 <!-- Tracking Notes -->
