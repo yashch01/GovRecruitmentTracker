@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import re
+import time
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -516,12 +517,32 @@ def extract_with_gemini(
         last_error: Exception | None = None
         for model_name in candidate_models:
             try:
+                # Enforce rate-limiting delay to stay under 15 RPM free-tier quota (default 4.1s)
+                rate_limit_delay = float(os.environ.get("GEMINI_RATE_LIMIT_DELAY", "4.1"))
+                if rate_limit_delay > 0:
+                    time.sleep(rate_limit_delay)
+
                 response = client.models.generate_content(
                     model=model_name,
                     contents=prompt,
                     **config_kwargs,
                 )
-                raw = (response.text or "").strip()
+                raw = ""
+                # Safely extract text parts from candidates to prevent thought_signature warning
+                try:
+                    if response.candidates and response.candidates[0].content:
+                        parts = response.candidates[0].content.parts or []
+                        text_parts = [
+                            str(p.text) for p in parts
+                            if getattr(p, "text", None) and not getattr(p, "thought", False)
+                        ]
+                        if text_parts:
+                            raw = "".join(text_parts).strip()
+                except Exception:
+                    pass
+                if not raw:
+                    raw = (getattr(response, "text", "") or "").strip()
+
                 # Strip markdown fences if model wraps response
                 if raw.startswith("```"):
                     raw = re.sub(r"^```(?:json)?\n?", "", raw)
@@ -534,6 +555,13 @@ def extract_with_gemini(
                 logger.warning("Model %s response JSON decode failed: %s. Trying next candidate...", model_name, exc)
                 last_error = exc
             except Exception as exc:
+                exc_str = str(exc)
+                if "429" in exc_str or "RESOURCE_EXHAUSTED" in exc_str:
+                    logger.warning("Gemini free tier RPM quota hit (429). Falling back to offline regex parse for this item.")
+                    fallback = _offline_regex_parse(text)
+                    fallback["_fallback_reason"] = f"Gemini quota 429 RESOURCE_EXHAUSTED: {exc}"
+                    fallback["_error"] = f"Gemini quota 429 RESOURCE_EXHAUSTED: {exc}"
+                    return fallback
                 logger.warning("Model %s failed: %s. Trying next candidate...", model_name, exc)
                 last_error = exc
 

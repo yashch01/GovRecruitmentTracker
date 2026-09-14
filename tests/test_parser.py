@@ -383,12 +383,13 @@ def test_pipeline_runner_gemini_fallback():
     _assert(r["is_cs_it"] is True, "Pipeline regex: is_cs_it True", str(r.get("is_cs_it")))
 
     # Stage 2: Bad API key → should NOT crash, should fall back to regex
-    r_bad = run_extraction_pipeline(
-        text=pipeline_text,
-        url="https://www.nielit.gov.in",
-        org_name="NIELIT",
-        api_key="bad-api-key-xyz",
-    )
+    with patch("time.sleep"):
+        r_bad = run_extraction_pipeline(
+            text=pipeline_text,
+            url="https://www.nielit.gov.in",
+            org_name="NIELIT",
+            api_key="bad-api-key-xyz",
+        )
     _assert("_source" in r_bad, "Bad API key does not crash pipeline", str(list(r_bad.keys())))
     _assert(r_bad.get("_source") in ("regex", "gemini"), "Source is regex or gemini after bad key", r_bad.get("_source"))
 
@@ -427,7 +428,7 @@ def test_parser_registry():
 # ============================================================================
 
 def test_candidate_models_fallback_chain():
-    section("7. Gemini Multi-Model Fallback Chain")
+    section("7. Gemini Multi-Model Fallback Chain & 429 Quota Handling")
 
     test_notice = (
         "BIS Scientist B Recruitment 2025. B.Tech Computer Science. "
@@ -447,6 +448,7 @@ def test_candidate_models_fallback_chain():
     mock_client.models.generate_content.side_effect = mock_generate_content
 
     with patch("parser.genai.Client", return_value=mock_client), \
+         patch("time.sleep"), \
          patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "GEMINI_MODEL": "gemini-3.5-flash,gemini-2.5-flash"}):
         res = extract_with_gemini(test_notice, org_name="BIS")
         _assert(res.get("_source") == "gemini", "Fallback chain: second model succeeds after first 404")
@@ -459,10 +461,25 @@ def test_candidate_models_fallback_chain():
     mock_client.models.generate_content.side_effect = mock_generate_all_fail
 
     with patch("parser.genai.Client", return_value=mock_client), \
+         patch("time.sleep"), \
          patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "GEMINI_MODEL": "gemini-3.5-flash,gemini-2.5-flash"}):
         res_all_fail = extract_with_gemini(test_notice, org_name="BIS")
         _assert(res_all_fail.get("_source") == "regex", "All candidate models fail -> falls back to regex")
         _assert("_fallback_reason" in res_all_fail, "Fallback reason present on all model failure")
+
+    # Scenario 3: 429 RESOURCE_EXHAUSTED -> immediate drop to regex without trying subsequent models
+    mock_client_429 = MagicMock()
+    mock_client_429.models.generate_content.side_effect = RuntimeError(
+        "ResourceExhausted: 429 RESOURCE_EXHAUSTED: limit: 15, model: gemini-3.5-flash. Please retry in 37s."
+    )
+
+    with patch("parser.genai.Client", return_value=mock_client_429), \
+         patch("time.sleep") as mock_sleep, \
+         patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "GEMINI_MODEL": "gemini-3.5-flash,gemini-2.5-flash", "GEMINI_RATE_LIMIT_DELAY": "4.1"}):
+        res_429 = extract_with_gemini(test_notice, org_name="BIS")
+        _assert(res_429.get("_source") == "regex", "429 immediately falls back to regex")
+        _assert(mock_client_429.models.generate_content.call_count == 1, "429 does NOT try subsequent candidate models", str(mock_client_429.models.generate_content.call_count))
+        _assert(mock_sleep.called, "Rate limiting delay was enforced before call")
 
 
 # ============================================================================
