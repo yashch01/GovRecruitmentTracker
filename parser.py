@@ -466,16 +466,23 @@ def extract_with_gemini(
     """
     Stage 2: Extract structured job data using Gemini 2.5 Flash API.
 
-    Returns extracted dict on success, or {"_error": str} on failure.
+    Returns extracted dict on success, or fallback/error dict on failure.
     Caller should fall back to Stage 3 on any error.
     """
-    api_key = api_key or os.environ.get("GEMINI_API_KEY", "")
+    api_key = (api_key or os.environ.get("GEMINI_API_KEY", "")).strip()
 
     if not api_key:
-        return {"_error": "GEMINI_API_KEY not set — using offline fallback."}
+        # Skip network call entirely and use Stage 3 offline regex fallback
+        fallback = _offline_regex_parse(text)
+        fallback["_fallback_reason"] = "GEMINI_API_KEY not set — using offline fallback."
+        fallback["_error"] = "GEMINI_API_KEY not set — using offline fallback."
+        return fallback
 
     if not _GENAI_AVAILABLE:
-        return {"_error": "google-genai not installed."}
+        fallback = _offline_regex_parse(text)
+        fallback["_fallback_reason"] = "google-genai not installed."
+        fallback["_error"] = "google-genai not installed."
+        return fallback
 
     try:
         client = genai.Client(api_key=api_key)
@@ -483,14 +490,17 @@ def extract_with_gemini(
             org_name=org_name or "Unknown Organization",
             notice_text=text[:8000],      # hard cap to stay within free-tier limits
         )
-        gemini_model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+        gemini_model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        config_kwargs = {}
+        if genai_types:
+            config_kwargs["config"] = genai_types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.1,
+            )
         response = client.models.generate_content(
             model=gemini_model,
             contents=prompt,
-            config=genai_types.GenerateContentConfig(
-                response_mime_type="application/json",
-                temperature=0.1,
-            ),
+            **config_kwargs,
         )
         raw = (response.text or "").strip()
         # Strip markdown fences if model wraps response
@@ -502,9 +512,15 @@ def extract_with_gemini(
         return data
 
     except json.JSONDecodeError as exc:
-        return {"_error": f"JSON parse error: {exc}"}
+        fallback = _offline_regex_parse(text)
+        fallback["_fallback_reason"] = f"JSON parse error: {exc}"
+        fallback["_error"] = f"JSON parse error: {exc}"
+        return fallback
     except Exception as exc:
-        return {"_error": f"Gemini API error: {exc}"}
+        fallback = _offline_regex_parse(text)
+        fallback["_fallback_reason"] = f"Gemini API error: {exc}"
+        fallback["_error"] = f"Gemini API error: {exc}"
+        return fallback
 
 
 # ===========================================================================
@@ -734,6 +750,11 @@ def extract_with_regex(text: str, url: str = "") -> dict[str, Any]:
         "_source":             "regex",
         "_all_dates_found":    dates,         # debug: all dates detected
     }
+
+
+def _offline_regex_parse(text: str, url: str = "") -> dict[str, Any]:
+    """Stage 3: Offline regex fallback parser."""
+    return extract_with_regex(text, url=url)
 
 
 # ===========================================================================
