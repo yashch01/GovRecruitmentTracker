@@ -12,6 +12,7 @@ Tests cover:
 
 import sys
 import os
+from unittest.mock import MagicMock, patch
 
 # Add parent to path so `parser` is importable without install
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -19,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from parser import (
     is_eligible_for_cs_it_holder,
     classify_gov,
+    extract_with_gemini,
     extract_with_regex,
     run_extraction_pipeline,
     verify_age_eligibility,
@@ -413,7 +415,54 @@ def test_parser_registry():
     _assert(r["_source"] == "regex", "PARSER_REGISTRY['regex'] executes correctly", str(r.get("_source")))
 
     with open("parser.py", "r", encoding="utf-8") as f:
-        _assert("gemini-2.5-flash" in f.read(), "parser.py targets valid Gemini model gemini-2.5-flash")
+        content = f.read()
+        _assert(
+            "gemini-3.5-flash" in content and "gemini-2.5-flash" in content,
+            "parser.py targets candidate models including gemini-3.5-flash and gemini-2.5-flash",
+        )
+
+
+# ============================================================================
+# 7. Gemini Multi-Model Fallback Chain
+# ============================================================================
+
+def test_candidate_models_fallback_chain():
+    section("7. Gemini Multi-Model Fallback Chain")
+
+    test_notice = (
+        "BIS Scientist B Recruitment 2025. B.Tech Computer Science. "
+        "Pay Level 10. Last date: 15/11/2025. GATE mandatory."
+    )
+
+    # Scenario 1: First model fails (404), second candidate model succeeds
+    mock_client = MagicMock()
+    mock_resp_success = MagicMock()
+    mock_resp_success.text = '{"title": "Scientist B", "pay_level_or_ctc": "Level 10", "gate_required": true}'
+
+    def mock_generate_content(model, contents, **kwargs):
+        if model == "gemini-3.5-flash":
+            raise RuntimeError("HTTP 404: models/gemini-3.5-flash is not found")
+        return mock_resp_success
+
+    mock_client.models.generate_content.side_effect = mock_generate_content
+
+    with patch("parser.genai.Client", return_value=mock_client), \
+         patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "GEMINI_MODEL": "gemini-3.5-flash,gemini-2.5-flash"}):
+        res = extract_with_gemini(test_notice, org_name="BIS")
+        _assert(res.get("_source") == "gemini", "Fallback chain: second model succeeds after first 404")
+        _assert(res.get("_model_used") == "gemini-2.5-flash", "Fallback chain: correctly recorded model used")
+
+    # Scenario 2: All candidate models fail -> falls back to offline regex
+    def mock_generate_all_fail(model, contents, **kwargs):
+        raise RuntimeError(f"HTTP 404: {model} not found")
+
+    mock_client.models.generate_content.side_effect = mock_generate_all_fail
+
+    with patch("parser.genai.Client", return_value=mock_client), \
+         patch.dict(os.environ, {"GEMINI_API_KEY": "test-key", "GEMINI_MODEL": "gemini-3.5-flash,gemini-2.5-flash"}):
+        res_all_fail = extract_with_gemini(test_notice, org_name="BIS")
+        _assert(res_all_fail.get("_source") == "regex", "All candidate models fail -> falls back to regex")
+        _assert("_fallback_reason" in res_all_fail, "Fallback reason present on all model failure")
 
 
 # ============================================================================
@@ -427,6 +476,7 @@ if __name__ == "__main__":
     test_age_verifier()
     test_pipeline_runner_gemini_fallback()
     test_parser_registry()
+    test_candidate_models_fallback_chain()
 
     total = _pass + _fail
     print(f"\n{'─'*60}")

@@ -14,11 +14,14 @@ Supporting classifiers:
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 # ── Optional pdfplumber import (graceful if missing) ─────────────────────────
 try:
@@ -464,7 +467,7 @@ def extract_with_gemini(
     api_key: str = "",
 ) -> dict[str, Any]:
     """
-    Stage 2: Extract structured job data using Gemini 2.5 Flash API.
+    Stage 2: Extract structured job data using prioritized Gemini model fallback chain.
 
     Returns extracted dict on success, or fallback/error dict on failure.
     Caller should fall back to Stage 3 on any error.
@@ -484,42 +487,66 @@ def extract_with_gemini(
         fallback["_error"] = "google-genai not installed."
         return fallback
 
+    raw_models = os.environ.get(
+        "GEMINI_MODEL",
+        "gemini-3.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash,gemini-1.5-flash"
+    )
+    candidate_models = [m.strip() for m in raw_models.split(",") if m.strip()]
+    if not candidate_models:
+        candidate_models = [
+            "gemini-3.5-flash",
+            "gemini-3.1-flash-lite",
+            "gemini-2.5-flash",
+            "gemini-1.5-flash",
+        ]
+
     try:
         client = genai.Client(api_key=api_key)
         prompt = _GEMINI_PROMPT_TEMPLATE.format(
             org_name=org_name or "Unknown Organization",
             notice_text=text[:8000],      # hard cap to stay within free-tier limits
         )
-        gemini_model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         config_kwargs = {}
         if genai_types:
             config_kwargs["config"] = genai_types.GenerateContentConfig(
                 response_mime_type="application/json",
                 temperature=0.1,
             )
-        response = client.models.generate_content(
-            model=gemini_model,
-            contents=prompt,
-            **config_kwargs,
-        )
-        raw = (response.text or "").strip()
-        # Strip markdown fences if model wraps response
-        if raw.startswith("```"):
-            raw = re.sub(r"^```(?:json)?\n?", "", raw)
-            raw = re.sub(r"\n?```$", "", raw)
-        data = json.loads(raw)
-        data["_source"] = "gemini"
-        return data
 
-    except json.JSONDecodeError as exc:
+        last_error: Exception | None = None
+        for model_name in candidate_models:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    **config_kwargs,
+                )
+                raw = (response.text or "").strip()
+                # Strip markdown fences if model wraps response
+                if raw.startswith("```"):
+                    raw = re.sub(r"^```(?:json)?\n?", "", raw)
+                    raw = re.sub(r"\n?```$", "", raw)
+                data = json.loads(raw)
+                data["_source"] = "gemini"
+                data["_model_used"] = model_name
+                return data
+            except json.JSONDecodeError as exc:
+                logger.warning("Model %s response JSON decode failed: %s. Trying next candidate...", model_name, exc)
+                last_error = exc
+            except Exception as exc:
+                logger.warning("Model %s failed: %s. Trying next candidate...", model_name, exc)
+                last_error = exc
+
+        # All candidate models failed
         fallback = _offline_regex_parse(text)
-        fallback["_fallback_reason"] = f"JSON parse error: {exc}"
-        fallback["_error"] = f"JSON parse error: {exc}"
+        fallback["_fallback_reason"] = f"All candidate Gemini models failed: {last_error}"
+        fallback["_error"] = f"All candidate Gemini models failed: {last_error}"
         return fallback
+
     except Exception as exc:
         fallback = _offline_regex_parse(text)
-        fallback["_fallback_reason"] = f"Gemini API error: {exc}"
-        fallback["_error"] = f"Gemini API error: {exc}"
+        fallback["_fallback_reason"] = f"Gemini client error: {exc}"
+        fallback["_error"] = f"Gemini client error: {exc}"
         return fallback
 
 

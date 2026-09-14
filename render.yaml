@@ -41,7 +41,7 @@ services:
         # Set your free Google AI Studio key in Render Dashboard
 
       - key: GEMINI_MODEL
-        value: gemini-2.5-flash
+        value: "gemini-3.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash,gemini-1.5-flash"
 
       - key: TELEGRAM_BOT_TOKEN
         sync: false

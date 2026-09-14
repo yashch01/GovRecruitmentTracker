@@ -30,7 +30,10 @@ class Config:
 
     # ── Google APIs ───────────────────────────────────────────────────────────
     GEMINI_API_KEY              = os.environ.get("GEMINI_API_KEY", "")
-    GEMINI_MODEL                = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    GEMINI_MODEL                = os.environ.get(
+        "GEMINI_MODEL",
+        "gemini-3.5-flash,gemini-3.1-flash-lite,gemini-2.5-flash,gemini-1.5-flash"
+    )
     GOOGLE_CREDENTIALS_PATH     = os.environ.get("GOOGLE_CREDENTIALS_PATH", "credentials.json")
     GOOGLE_TOKEN_PATH           = os.environ.get("GOOGLE_TOKEN_PATH", "token.json")
     GOOGLE_CALENDAR_ID          = os.environ.get("GOOGLE_CALENDAR_ID", "primary")
